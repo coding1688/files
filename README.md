@@ -45,6 +45,22 @@ php artisan migrate
 - 表名默认与既有项目一致（`files`、`file_references`、`file_replicas`、`file_storages`、`file_configurations`、`file_sync_tasks`）。
 - 包内迁移用于全新安装；已上线的宿主项目不要重复执行，改用宿主现有迁移。
 
+## 包内容
+
+| 命名空间 | 类 |
+| --- | --- |
+| `Coding1688\Files` | `FileStorage`、`UploadConfiguration`、`FileReferences`、`ImageLinks`、`StorageRegistry`、`StorageSynchronizer`、`StoredFile` |
+| `Coding1688\Files\Concerns` | `HasFileReferences`、`HasImageCover` |
+| `Coding1688\Files\Constants` | `FileType`（枚举，值需与 `files.type` 列一致） |
+| `Coding1688\Files\Jobs` | `FileSyncBatch` |
+| `Coding1688\Files\Models` | `File`、`FileReference`、`FileReplica`、`FileStorageAccount`、`FileConfiguration`、`FileSyncTask` |
+
+## 宿主接入约定
+
+- 包内模型是基类。宿主需要工厂、`uploader()` 关系或 i18n 名称时，继承即可（本项目的 `App\Models\Common\File*` 就是这样做的）。
+- 包内 `StorageRegistry` 通过 `files.models.storage_account` 解析存储账号模型，因此宿主可以给它加上 `_i18n` 行为而不影响包内部。
+- `created_by` 外键只在 `files.user_table` 指向的表存在时才建立；`cover_file_id` 外键只对 `files.owner_tables` 中实际存在的表建立。
+
 ## 状态
 
-骨架阶段（P1）：`composer.json`、`FilesServiceProvider`、默认配置已就位；核心类与迁移将在 P2 迁入。
+v0.2.0：核心类、模型、复制 Job 与迁移已迁入；签名 URL / 优先副本解析在 v0.3.0。

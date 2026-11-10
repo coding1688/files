@@ -8,7 +8,10 @@ class FilesServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/files.php', 'files');
+        $this->mergeFilesConfig();
+
+        $this->app->scoped(StorageRegistry::class);
+        $this->app->scoped(ImageLinks::class);
     }
 
     public function boot(): void
@@ -28,5 +31,32 @@ class FilesServiceProvider extends ServiceProvider
                 $migrations => database_path('migrations'),
             ], 'files-migrations');
         }
+    }
+
+    /**
+     * Package defaults are merged under the host configuration. Lists replace,
+     * maps merge, so hosts can override a single upload limit without copying
+     * the whole defaults array.
+     */
+    private function mergeFilesConfig(): void
+    {
+        $defaults = require __DIR__.'/../config/files.php';
+        $current = (array) config('files', []);
+
+        config(['files' => $this->merge($defaults, $current)]);
+    }
+
+    /** @param array<string, mixed> $defaults @param array<string, mixed> $current */
+    private function merge(array $defaults, array $current): array
+    {
+        foreach ($current as $key => $value) {
+            if (is_array($value) && isset($defaults[$key]) && is_array($defaults[$key]) && ! array_is_list($value)) {
+                $defaults[$key] = $this->merge($defaults[$key], $value);
+            } else {
+                $defaults[$key] = $value;
+            }
+        }
+
+        return $defaults;
     }
 }

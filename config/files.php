@@ -1,17 +1,24 @@
 <?php
 
+use Coding1688\Files\Models\File;
+use Coding1688\Files\Models\FileConfiguration;
+use Coding1688\Files\Models\FileReference;
+use Coding1688\Files\Models\FileReplica;
+use Coding1688\Files\Models\FileStorageAccount;
+use Coding1688\Files\Models\FileSyncTask;
+
 return [
     /*
     | Model classes are resolved from configuration so host applications can
     | extend or replace them without forking the package.
     */
     'models' => [
-        'file' => Coding1688\Files\Models\File::class,
-        'reference' => Coding1688\Files\Models\FileReference::class,
-        'replica' => Coding1688\Files\Models\FileReplica::class,
-        'storage_account' => Coding1688\Files\Models\FileStorageAccount::class,
-        'configuration' => Coding1688\Files\Models\FileConfiguration::class,
-        'sync_task' => Coding1688\Files\Models\FileSyncTask::class,
+        'file' => File::class,
+        'reference' => FileReference::class,
+        'replica' => FileReplica::class,
+        'storage_account' => FileStorageAccount::class,
+        'configuration' => FileConfiguration::class,
+        'sync_task' => FileSyncTask::class,
     ],
 
     /*
@@ -27,6 +34,18 @@ return [
         'configuration' => 'file_configurations',
         'sync_tasks' => 'file_sync_tasks',
     ],
+
+    /*
+    | Host table holding users. Used for created_by foreign keys; leave null
+    | when the host has no users table.
+    */
+    'user_table' => null,
+
+    /*
+    | Host tables that own a cover_file_id column. The package migration adds
+    | the foreign key only for tables that exist.
+    */
+    'owner_tables' => [],
 
     /*
     | Queues used by replication jobs. The connection must exist in the host
