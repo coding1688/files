@@ -78,6 +78,18 @@ return [
     'preferred_disk' => null,
 
     /*
+    | Ordered list of disks used for public URLs; overrides preferred_disk.
+    | The database value (file_configurations.preferred_disks) wins over this.
+    */
+    'preferred_disks' => null,
+
+    /*
+    | Providers that require an endpoint and do not accept S3 ACL headers.
+    */
+    'endpoint_required_providers' => ['cloudflare', 'tencent'],
+    'strip_acl_providers' => ['cloudflare', 'tencent'],
+
+    /*
     | Class of the enum cast for files.type. Null uses the package enum.
     */
     'type_enum' => null,
@@ -104,6 +116,7 @@ return [
             'oss' => ['provider' => 'aliyun', 'driver' => 's3', 'visibility' => 'private'],
             'gcs' => ['provider' => 'google', 'driver' => 's3', 'visibility' => 'private'],
             's3_compatible' => ['provider' => 's3_compatible', 'driver' => 's3', 'visibility' => 'private'],
+            'cos' => ['provider' => 'tencent', 'driver' => 's3', 'visibility' => 'public'],
         ],
     ],
 ];

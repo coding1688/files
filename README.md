@@ -52,6 +52,40 @@ php artisan migrate
 - 优先副本解析：`files.preferred_disk` + `File::publicUrl()`，未命中副本自动回退。
 - 引用校验在 `saving` 阶段完成，无效文件 ID 不会再写入半条记录；宿主的多步写操作请自行包事务。
 
+## 多云互备与迁徙
+
+同一个应用可以同时挂多个云（R2、COS、OSS、S3、S3 兼容），互不影响。
+
+```bash
+php artisan files:disks                       # 每个盘的 provider / 是否可用 / 文件与副本数量
+php artisan files:smoke cos                   # 上传、读回、签名、删除，验证一个盘
+php artisan files:sync public cos --now       # 把 public 的已登记文件复制到 COS（校验和、幂等、可重跑）
+php artisan files:failover cos r2             # 公共 URL 优先走 COS，副本缺失时回退 R2/原盘
+php artisan files:failover                    # 查看当前顺序
+```
+
+- `files:sync` 不带 `--now` 时按 `files.sync.*` 排队，由 worker 逐文件处理；中断后重新执行会跳过已校验过的副本。
+- `files:failover` 把顺序写入 `file_configurations.preferred_disks`，**重启服务或清配置缓存都不需要**，下一次请求即生效。
+- 一个云不可用时，标准动作是：`files:sync 老云 新云` 补齐副本 → `files:failover 新云` → 观察 → 再决定是否下线老云。
+- 源文件永远不会被删除；复制只新增 `file_replicas` 记录。
+
+### 腾讯云 COS
+
+`cos` 是内置盘，凭据走 `COS_*` 环境变量或在后台「存储配置」里填写：
+
+| 变量 | 说明 |
+| --- | --- |
+| `COS_ACCESS_KEY_ID` / `COS_SECRET_ACCESS_KEY` | 腾讯云 API 密钥 |
+| `COS_REGION` | 与桶一致，如 `ap-singapore` |
+| `COS_BUCKET` | 桶名（含 APPID 后缀） |
+| `COS_ENDPOINT` | `https://cos.<region>.myqcloud.com` |
+| `COS_URL` | 公开访问域名或 CDN 域名（私有桶留空） |
+| `COS_USE_PATH_STYLE_ENDPOINT` | 默认 `true`，S3 兼容接口建议保持 |
+| `COS_UPLOAD_VISIBILITY` | 默认 `public`；证书类设 `private` 配合 `temporaryUrl()` |
+
+COS 与 R2 一样会剥离 S3 的 ACL 头（`files.strip_acl_providers`），并要求显式 endpoint。
+公开访问需要桶开启公共读或绑定 CDN，`COS_URL` 不配会得到不可访问的 endpoint 直链。
+
 ## 升级注意
 
 - `files.types` 与历史数据兼容：不要删除已存在的类型值，否则枚举 cast 会失败。
@@ -76,4 +110,5 @@ php artisan migrate
 
 ## 状态
 
+v0.4.0：新增腾讯云 COS 盘、多云优先顺序（`files:failover`）、迁移/冒烟/状态命令。
 v0.3.0：去除了 `request()` 依赖、trait 的 `save()`/`delete()` 覆盖、队列名可配、新增临时链接与优先副本解析。

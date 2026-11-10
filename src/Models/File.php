@@ -4,6 +4,7 @@ namespace Coding1688\Files\Models;
 
 use Coding1688\Files\Constants\FileType;
 use Coding1688\Files\FileStorage;
+use Coding1688\Files\StorageRegistry;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -69,12 +70,13 @@ class File extends Model
     /** @return array{0: string, 1: string} */
     private function resolvedLocation(): array
     {
-        $preferred = config('files.preferred_disk');
-
-        if (is_string($preferred) && $preferred !== '' && $preferred !== $this->disk) {
-            $replica = $this->replicaOn($preferred);
+        foreach (app(StorageRegistry::class)->preferredDisks() as $disk) {
+            if ($disk === $this->disk) {
+                continue;
+            }
+            $replica = $this->replicaOn($disk);
             if ($replica !== null) {
-                return [$preferred, $replica->path];
+                return [$disk, $replica->path];
             }
         }
 

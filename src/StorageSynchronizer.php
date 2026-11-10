@@ -20,12 +20,12 @@ class StorageSynchronizer
         return File::where(fn (Builder $query) => $query->where('disk', $disk)->orWhereHas('replicas', fn (Builder $replicas) => $replicas->where('disk', $disk)));
     }
 
-    public function process(int $id): void
+    public function process(int $id, bool $dispatch = true): bool
     {
-        DB::transaction(function () use ($id): void {
+        return DB::transaction(function () use ($id, $dispatch): bool {
             $task = FileSyncTask::lockForUpdate()->findOrFail($id);
             if (! in_array($task->status, ['pending', 'running'], true)) {
-                return;
+                return true;
             }
             $task->fill(['status' => 'running', 'started_at' => $task->started_at ?? now()]);
             $file = $this->files($task->source_disk)->where('id', '>', $task->last_file_id)->where('id', '<=', $task->max_file_id)->orderBy('id')->lockForUpdate()->first();
@@ -33,7 +33,7 @@ class StorageSynchronizer
                 $task->skipped += max(0, $task->total - $task->copied - $task->skipped - $task->failed);
                 $task->fill(['status' => $task->failed > 0 ? 'failed' : 'completed', 'finished_at' => now()])->save();
 
-                return;
+                return true;
             }
             try {
                 $providers = $this->storages->providers();
@@ -56,10 +56,14 @@ class StorageSynchronizer
             }
             $task->last_file_id = $file->id;
             $task->save();
-            FileSyncBatch::dispatch($id)
-                ->onConnection((string) config('files.sync.connection', 'file-sync'))
-                ->onQueue((string) config('files.sync.queue', 'file-sync'))
-                ->afterCommit();
+            if ($dispatch) {
+                FileSyncBatch::dispatch($id)
+                    ->onConnection((string) config('files.sync.connection', 'file-sync'))
+                    ->onQueue((string) config('files.sync.queue', 'file-sync'))
+                    ->afterCommit();
+            }
+
+            return false;
         });
     }
 

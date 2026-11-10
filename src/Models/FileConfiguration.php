@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class FileConfiguration extends Model
 {
-    protected $fillable = ['id', 'default_disk', 'max_upload_mb', 'allowed_extensions'];
+    protected $fillable = ['id', 'default_disk', 'max_upload_mb', 'allowed_extensions', 'preferred_disks'];
 
     public function getTable(): string
     {
@@ -15,6 +15,6 @@ class FileConfiguration extends Model
 
     protected function casts(): array
     {
-        return ['max_upload_mb' => 'integer', 'allowed_extensions' => 'array'];
+        return ['max_upload_mb' => 'integer', 'allowed_extensions' => 'array', 'preferred_disks' => 'array'];
     }
 }

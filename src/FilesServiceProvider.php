@@ -2,6 +2,10 @@
 
 namespace Coding1688\Files;
 
+use Coding1688\Files\Console\Commands\DisksCommand;
+use Coding1688\Files\Console\Commands\FailoverCommand;
+use Coding1688\Files\Console\Commands\SmokeCommand;
+use Coding1688\Files\Console\Commands\SyncCommand;
 use Illuminate\Support\ServiceProvider;
 
 class FilesServiceProvider extends ServiceProvider
@@ -23,6 +27,8 @@ class FilesServiceProvider extends ServiceProvider
         }
 
         if ($this->app->runningInConsole()) {
+            $this->commands([DisksCommand::class, SyncCommand::class, FailoverCommand::class, SmokeCommand::class]);
+
             $this->publishes([
                 __DIR__.'/../config/files.php' => config_path('files.php'),
             ], 'files-config');
