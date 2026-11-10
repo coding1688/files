@@ -22,7 +22,7 @@ class FilesServiceProvider extends ServiceProvider
     {
         $migrations = __DIR__.'/../database/migrations';
 
-        if (is_dir($migrations)) {
+        if ((bool) config('files.load_migrations', true) && is_dir($migrations)) {
             $this->loadMigrationsFrom($migrations);
         }
 

@@ -12,6 +12,12 @@ return [
     | Model classes are resolved from configuration so host applications can
     | extend or replace them without forking the package.
     */
+    /*
+    | Load the package migrations automatically. Set to false after
+    | publishing them into the host application.
+    */
+    'load_migrations' => (bool) env('FILES_LOAD_MIGRATIONS', true),
+
     'models' => [
         'file' => File::class,
         'reference' => FileReference::class,
