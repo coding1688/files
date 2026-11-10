@@ -1,5 +1,9 @@
 # coding1688/files
 
+[![CI](https://github.com/coding1688/files/actions/workflows/ci.yml/badge.svg)](https://github.com/coding1688/files/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PHP](https://img.shields.io/badge/php-%5E8.2-777bb4.svg)](composer.json)
+
 Laravel 文件模块：上传、文件引用追踪、多磁盘存储、副本复制与多云故障切换。
 
 - 支持 **PHP ^8.2**，**Laravel ^11 / ^12 / ^13**
@@ -26,23 +30,25 @@ Laravel 文件模块：上传、文件引用追踪、多磁盘存储、副本复
 
 ### 1. 引入仓库
 
-私有仓库（推荐 SSH，部署机需有只读密钥）：
+仓库是公开的，用 HTTPS 即可，不需要 token 也不需要 SSH：
 
 ```json
 {
     "repositories": [
-        { "type": "vcs", "url": "git@github.com:coding1688/files.git" }
+        { "type": "vcs", "url": "https://github.com/coding1688/files.git" }
     ],
     "require": {
-        "coding1688/files": "^0.4"
+        "coding1688/files": "^0.5"
     }
 }
 ```
 
-HTTPS + Token（CI / 服务器，不落盘）：
+如果已发布到 Packagist（见文末），可以省略 `repositories`，直接 `composer require coding1688/files`。
 
-```bash
-COMPOSER_AUTH='{"github-oauth":{"github.com":"ghp_xxx"}}' composer update coding1688/files
+要给包提 PR 时再用 SSH：
+
+```json
+{ "type": "vcs", "url": "git@github.com:coding1688/files.git" }
 ```
 
 本地开发（单仓 path，改代码立即生效）：
@@ -192,7 +198,7 @@ composer require league/flysystem-aws-s3-v3
 COS_ACCESS_KEY_ID=AKID...
 COS_SECRET_ACCESS_KEY=...
 COS_REGION=ap-singapore
-COS_BUCKET=techpeek-1250000000
+COS_BUCKET=example-bucket-1250000000
 COS_ENDPOINT=https://cos.ap-singapore.myqcloud.com
 COS_URL=https://img.example.com
 COS_USE_PATH_STYLE_ENDPOINT=true
@@ -424,6 +430,14 @@ $this->partialMock(StorageRegistry::class, fn ($mock) => $mock
 | 保存时报文件无效 | ID 不存在，或图片不是 public/非图片类型 | 错误键即字段名，按字段修正 |
 | 私有文件 `publicUrl()` 是 null | 私有文件不生成公开 URL | 用 `temporaryUrl()` |
 
+## 发布到 Packagist（可选）
+
+仓库是公开的，可以直接用 VCS 引入；登记到 Packagist 之后，宿主只要 `composer require coding1688/files`，并且能拿到版本列表与统计数据。
+
+1. 打开 <https://packagist.org/packages/submit>，填入 `https://github.com/coding1688/files`。
+2. 在 Packagist 的包设置里连接 GitHub（"Set up GitHub integration"）或配置 Webhook，之后每次 `git push --tags` 会自动同步版本。
+3. 之后宿主不需要再声明 `repositories`。
+
 ## 版本与升级
 
 - 语义化版本；`0.x` 阶段每个 minor 都可能带破坏性变更，升级前看本文件与 release notes。
@@ -432,7 +446,7 @@ $this->partialMock(StorageRegistry::class, fn ($mock) => $mock
 
 ## 状态
 
-- `v0.5.0`：包内自带 5 种语言（en/zh_CN/zh_TW/ja/ko），文案改用 `files::` 命名空间。
+- `v0.5.x`：包内自带 5 种语言（en/zh_CN/zh_TW/ja/ko），文案改用 `files::` 命名空间；仓库转为公开。
 - `v0.4.x`：COS provider、多云优先顺序、迁移/冒烟/状态命令、签名 URL、优先副本解析。
 - `v0.3.0`：去掉 `request()` 依赖与 trait 的 `save()`/`delete()` 覆盖，队列名与类型可配。
 - `v0.2.0`：核心类、模型、复制 Job 与迁移迁入。
