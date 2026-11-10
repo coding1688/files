@@ -367,7 +367,7 @@ php artisan files:failover                    # 查看当前顺序
 
 - pl-files（本包）：上传、引用追踪、多磁盘存储、多云复制
 - [pl-fields](https://github.com/coding1688/pl-fields)：字段类型注册与选项来源
-- [pl-helpers](https://github.com/coding1688/pl-helpers)：JSON 响应与分页信封
+- [pl-debug](https://github.com/coding1688/pl-debug)：请求级 SQL 性能分析与工具栏
 
 ## 本地化
 
