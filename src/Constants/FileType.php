@@ -47,7 +47,7 @@ enum FileType: string
 
     public function label(): string
     {
-        return __('common/file/const.'.$this->value);
+        return __('files::file.type_'.$this->value);
     }
 
     /** @return list<array{value: string, label: string}> */

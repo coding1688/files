@@ -68,7 +68,7 @@ class UploadConfiguration
             }
         }
 
-        throw ValidationException::withMessages(['disk' => __('common/file/const.no_public_storage')]);
+        throw ValidationException::withMessages(['disk' => __('files::file.no_public_storage')]);
     }
 
     /** @return list<string> */

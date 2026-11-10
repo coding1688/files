@@ -35,7 +35,7 @@ class FileReferences
         }
         $field = collect($fields)->search(fn (array $ids): bool => collect($ids)->map(fn ($id): int => (int) $id)->intersect($missing)->isNotEmpty());
 
-        throw ValidationException::withMessages([(is_string($field) && $field !== '' ? $field : 'files') => __('common/file/const.missing')]);
+        throw ValidationException::withMessages([(is_string($field) && $field !== '' ? $field : 'files') => __('files::file.missing')]);
     }
 
     /** @return array<string, list<int>> */
@@ -61,7 +61,7 @@ class FileReferences
             $existing = (clone $query)->pluck('file_id');
             $locked = File::whereIn('id', $requested->merge($existing)->unique()->sort()->values())->orderBy('id')->lockForUpdate()->pluck('id');
             if ($requested->diff($locked)->isNotEmpty()) {
-                throw ValidationException::withMessages(['files' => __('common/file/const.missing')]);
+                throw ValidationException::withMessages(['files' => __('files::file.missing')]);
             }
 
             $query->delete();

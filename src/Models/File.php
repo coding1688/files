@@ -31,7 +31,7 @@ class File extends Model
     {
         static::deleting(function (self $file): void {
             if ($file->references()->exists()) {
-                throw ValidationException::withMessages(['file' => __('common/file/const.in_use')]);
+                throw ValidationException::withMessages(['file' => __('files::file.in_use')]);
             }
         });
     }

@@ -26,12 +26,18 @@ class FilesServiceProvider extends ServiceProvider
             $this->loadMigrationsFrom($migrations);
         }
 
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'files');
+
         if ($this->app->runningInConsole()) {
             $this->commands([DisksCommand::class, SyncCommand::class, FailoverCommand::class, SmokeCommand::class]);
 
             $this->publishes([
                 __DIR__.'/../config/files.php' => config_path('files.php'),
             ], 'files-config');
+
+            $this->publishes([
+                __DIR__.'/../lang' => lang_path('vendor/files'),
+            ], 'files-lang');
 
             $this->publishes([
                 $migrations => database_path('migrations'),

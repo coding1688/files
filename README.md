@@ -357,6 +357,22 @@ php artisan files:failover                    # 查看当前顺序
 | `files.sync.connection` / `files.sync.queue` | `file-sync` | 复制任务队列 |
 | `files.reference_models` | `[]` | 宿主登记的文件引用消费者（宿主命令使用） |
 
+## 本地化
+
+包内自带 **5 种语言**：`en`、`zh_CN`、`zh_TW`、`ja`、`ko`，语言文件在 `lang/{locale}/file.php`，命名空间为 `files`：
+
+```php
+__('files::file.in_use');       // 文件仍被引用
+__('files::file.missing');      // 引用的文件不存在
+__('files::file.type_product'); // 类型标签（FileType::label() 使用）
+```
+
+- 宿主需要改文案：`php artisan vendor:publish --tag=files-lang`，然后编辑 `lang/vendor/files/{locale}/file.php`。发布后的文件优先于包内的。
+- 新增语言：在 `lang/vendor/files/{locale}/file.php` 放同名键，Laravel 会按 `fallback_locale` 回退。
+- 文件模块没有其它语言的翻译；缺失时统一回退到 `fallback_locale`（通常是 `en`）。
+
+保留这 5 种语言时，宿主侧对应的 UI 文案也需要同步存在：后台文件页面的 `pages/file/**/locales/{locale}.json`、菜单文案 `lang/{locale}/common/file/main.php`、存储校验消息 `lang/{locale}/common/file/storage.php`。
+
 ## 扩展点
 
 | 想做的事 | 做法 |
@@ -416,6 +432,7 @@ $this->partialMock(StorageRegistry::class, fn ($mock) => $mock
 
 ## 状态
 
+- `v0.5.0`：包内自带 5 种语言（en/zh_CN/zh_TW/ja/ko），文案改用 `files::` 命名空间。
 - `v0.4.x`：COS provider、多云优先顺序、迁移/冒烟/状态命令、签名 URL、优先副本解析。
 - `v0.3.0`：去掉 `request()` 依赖与 trait 的 `save()`/`delete()` 覆盖，队列名与类型可配。
 - `v0.2.0`：核心类、模型、复制 Job 与迁移迁入。
