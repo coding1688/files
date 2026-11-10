@@ -1,5 +1,5 @@
 {
-    "name": "coding1688/files",
+    "name": "coding1688/laravel-files",
     "description": "Reusable file upload, reference tracking, multi-disk storage and replication for Laravel applications.",
     "type": "library",
     "license": "MIT",
@@ -55,8 +55,9 @@
             "name": "coding1688"
         }
     ],
-    "homepage": "https://github.com/coding1688/files",
+    "homepage": "https://github.com/coding1688/laravel-files",
     "support": {
-        "issues": "https://github.com/coding1688/files/issues"
+        "issues": "https://github.com/coding1688/laravel-files/issues",
+        "source": "https://github.com/coding1688/laravel-files"
     }
 }

@@ -1,6 +1,6 @@
-# coding1688/files
+# coding1688/laravel-files
 
-[![CI](https://github.com/coding1688/files/actions/workflows/ci.yml/badge.svg)](https://github.com/coding1688/files/actions/workflows/ci.yml)
+[![CI](https://github.com/coding1688/laravel-files/actions/workflows/ci.yml/badge.svg)](https://github.com/coding1688/laravel-files/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PHP](https://img.shields.io/badge/php-%5E8.2-777bb4.svg)](composer.json)
 
@@ -35,20 +35,20 @@ Laravel 文件模块：上传、文件引用追踪、多磁盘存储、副本复
 ```json
 {
     "repositories": [
-        { "type": "vcs", "url": "https://github.com/coding1688/files.git" }
+        { "type": "vcs", "url": "https://github.com/coding1688/laravel-files.git" }
     ],
     "require": {
-        "coding1688/files": "^0.5"
+        "coding1688/laravel-files": "^0.5"
     }
 }
 ```
 
-如果已发布到 Packagist（见文末），可以省略 `repositories`，直接 `composer require coding1688/files`。
+如果已发布到 Packagist（见文末），可以省略 `repositories`，直接 `composer require coding1688/laravel-files`。
 
 要给包提 PR 时再用 SSH：
 
 ```json
-{ "type": "vcs", "url": "git@github.com:coding1688/files.git" }
+{ "type": "vcs", "url": "git@github.com:coding1688/laravel-files.git" }
 ```
 
 本地开发（单仓 path，改代码立即生效）：
@@ -56,7 +56,7 @@ Laravel 文件模块：上传、文件引用追踪、多磁盘存储、副本复
 ```json
 {
     "repositories": [
-        { "type": "path", "url": "packages/coding1688/files", "options": { "symlink": true } }
+        { "type": "path", "url": "packages/coding1688/laravel-files", "options": { "symlink": true } }
     ]
 }
 ```
@@ -66,7 +66,7 @@ Laravel 文件模块：上传、文件引用追踪、多磁盘存储、副本复
 ### 2. 安装
 
 ```bash
-composer update coding1688/files
+composer update coding1688/laravel-files
 ```
 
 包通过 Laravel 自动发现注册 `Coding1688\Files\FilesServiceProvider`；如果宿主关闭了自动发现，手动加到 `bootstrap/providers.php`。
@@ -432,16 +432,16 @@ $this->partialMock(StorageRegistry::class, fn ($mock) => $mock
 
 ## 发布到 Packagist（可选）
 
-仓库是公开的，可以直接用 VCS 引入；登记到 Packagist 之后，宿主只要 `composer require coding1688/files`，并且能拿到版本列表与统计数据。
+仓库是公开的，可以直接用 VCS 引入；登记到 Packagist 之后，宿主只要 `composer require coding1688/laravel-files`，并且能拿到版本列表与统计数据。
 
-1. 打开 <https://packagist.org/packages/submit>，填入 `https://github.com/coding1688/files`。
+1. 打开 <https://packagist.org/packages/submit>，填入 `https://github.com/coding1688/laravel-files`。
 2. 在 Packagist 的包设置里连接 GitHub（"Set up GitHub integration"）或配置 Webhook，之后每次 `git push --tags` 会自动同步版本。
 3. 之后宿主不需要再声明 `repositories`。
 
 ## 版本与升级
 
 - 语义化版本；`0.x` 阶段每个 minor 都可能带破坏性变更，升级前看本文件与 release notes。
-- 升级步骤：改宿主 `composer.json` 约束 → `composer update coding1688/files` → `php artisan migrate` → 跑宿主测试。
+- 升级步骤：改宿主 `composer.json` 约束 → `composer update coding1688/laravel-files` → `php artisan migrate` → 跑宿主测试。
 - 迁移只新增表和列；不删除、不改现有列。
 
 ## 状态
