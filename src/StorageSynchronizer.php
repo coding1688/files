@@ -56,7 +56,10 @@ class StorageSynchronizer
             }
             $task->last_file_id = $file->id;
             $task->save();
-            FileSyncBatch::dispatch($id)->onConnection('file-sync')->onQueue('file-sync')->afterCommit();
+            FileSyncBatch::dispatch($id)
+                ->onConnection((string) config('files.sync.connection', 'file-sync'))
+                ->onQueue((string) config('files.sync.queue', 'file-sync'))
+                ->afterCommit();
         });
     }
 

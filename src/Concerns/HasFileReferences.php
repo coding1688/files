@@ -5,7 +5,6 @@ namespace Coding1688\Files\Concerns;
 use Coding1688\Files\FileReferences;
 use Coding1688\Files\Models\FileReference;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Facades\DB;
 
 trait HasFileReferences
 {
@@ -20,22 +19,19 @@ trait HasFileReferences
 
     public static function bootHasFileReferences(): void
     {
+        // Validate before the owner row is written so an invalid file id fails
+        // the save instead of leaving it half applied.
+        static::saving(function ($model): void {
+            if (! $model->exists || $model->isDirty($model->fileReferenceFields())) {
+                app(FileReferences::class)->validate($model);
+            }
+        });
         static::saved(function ($model): void {
             if ($model->wasRecentlyCreated || $model->wasChanged($model->fileReferenceFields())) {
                 app(FileReferences::class)->syncModel($model);
             }
         });
         static::deleted(fn ($model) => $model->fileReferences()->delete());
-    }
-
-    public function save(array $options = []): bool
-    {
-        return DB::transaction(fn (): bool => parent::save($options));
-    }
-
-    public function delete(): ?bool
-    {
-        return DB::transaction(fn (): ?bool => parent::delete());
     }
 
     public function fileReferences(): MorphMany

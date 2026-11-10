@@ -17,14 +17,38 @@ class FileReferences
             if (! $current) {
                 return;
             }
-            $fields = [];
-            foreach ($current->fileReferenceFields() as $field) {
-                $idField = $current->fileReferenceIdFields()[$field] ?? null;
-                $value = $current->getAttribute($idField ?? $field);
-                $fields[$field] = $idField === null ? $this->idsFromUrls($value) : array_values(array_unique(array_map('intval', array_filter((array) $value))));
-            }
-            $this->sync($current, $fields);
+            $this->sync($current, $this->fieldsFor($current));
         });
+    }
+
+    public function validate(Model $owner): void
+    {
+        $fields = $this->fieldsFor($owner);
+        $requested = collect($fields)->flatten()->map(fn ($id): int => (int) $id)->unique();
+        if ($requested->isEmpty()) {
+            return;
+        }
+        $found = File::whereIn('id', $requested->all())->pluck('id')->map(fn ($id): int => (int) $id);
+        $missing = $requested->diff($found);
+        if ($missing->isEmpty()) {
+            return;
+        }
+        $field = collect($fields)->search(fn (array $ids): bool => collect($ids)->map(fn ($id): int => (int) $id)->intersect($missing)->isNotEmpty());
+
+        throw ValidationException::withMessages([(is_string($field) && $field !== '' ? $field : 'files') => __('common/file/const.missing')]);
+    }
+
+    /** @return array<string, list<int>> */
+    private function fieldsFor(Model $owner): array
+    {
+        $fields = [];
+        foreach ($owner->fileReferenceFields() as $field) {
+            $idField = $owner->fileReferenceIdFields()[$field] ?? null;
+            $value = $owner->getAttribute($idField ?? $field);
+            $fields[$field] = $idField === null ? $this->idsFromUrls($value) : array_values(array_unique(array_map('intval', array_filter((array) $value))));
+        }
+
+        return $fields;
     }
 
     /** @param array<string, list<int>> $fields */

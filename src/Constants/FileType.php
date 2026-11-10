@@ -27,7 +27,22 @@ enum FileType: string
     /** @return list<string> */
     public static function values(): array
     {
-        return array_column(self::cases(), 'value');
+        $all = array_column(self::cases(), 'value');
+        $configured = config('files.types');
+
+        if (! is_array($configured) || $configured === []) {
+            return $all;
+        }
+
+        return array_values(array_intersect($all, array_map('strval', $configured)));
+    }
+
+    /** @return list<self> */
+    public static function enabled(): array
+    {
+        $values = self::values();
+
+        return array_values(array_filter(self::cases(), fn (self $case): bool => in_array($case->value, $values, true)));
     }
 
     public function label(): string
@@ -41,6 +56,6 @@ enum FileType: string
         return array_map(fn (self $type): array => [
             'value' => $type->value,
             'label' => $type->label(),
-        ], self::cases());
+        ], self::enabled());
     }
 }

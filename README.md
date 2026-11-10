@@ -38,6 +38,19 @@ php artisan migrate
 | `files.types` | 允许的文件类型值（与 `file` 表 `type` 列一致） |
 | `files.uploads.*` | 磁盘、体积、扩展名策略 |
 | `files.reference_models` | 需要追踪文件引用的业务模型（默认空） |
+| `files.preferred_disk` | 公共 URL 优先使用的副本盘（如 `r2`），null 表示用文件自身磁盘 |
+| `files.type_enum` | `files.type` 的枚举类，null 使用包内枚举 |
+| `files.types` | 可选的类型白名单子集，null 暴露枚举全部值 |
+| `files.user_table` / `files.owner_tables` | 迁移建立外键时使用的宿主表 |
+
+## 能力
+
+- 上传、删除、校验和、引用计数保护。
+- 多磁盘存储账号（S3 / R2 / OSS / GCS / S3 兼容），凭据加密存储。
+- 副本复制：`StorageSynchronizer` 按文件分批、双向校验和、幂等重跑。
+- 私有文件临时链接：`File::temporaryUrl($expires)`，驱动不支持时返回 null 而不是抛错。
+- 优先副本解析：`files.preferred_disk` + `File::publicUrl()`，未命中副本自动回退。
+- 引用校验在 `saving` 阶段完成，无效文件 ID 不会再写入半条记录；宿主的多步写操作请自行包事务。
 
 ## 升级注意
 
@@ -63,4 +76,4 @@ php artisan migrate
 
 ## 状态
 
-v0.2.0：核心类、模型、复制 Job 与迁移已迁入；签名 URL / 优先副本解析在 v0.3.0。
+v0.3.0：去除了 `request()` 依赖、trait 的 `save()`/`delete()` 覆盖、队列名可配、新增临时链接与优先副本解析。

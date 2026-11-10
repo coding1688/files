@@ -49,6 +49,17 @@ final class FileStorage
         return $visibility === 'public' ? $this->storages->disk($disk)->url($path) : null;
     }
 
+    /** @param  array<string, mixed>  $options */
+    public function temporaryUrl(string $disk, string $path, int|\DateTimeInterface|\DateInterval $expires, array $options = []): ?string
+    {
+        try {
+            return $this->storages->disk($disk)->temporaryUrl($path, $expires, $options);
+        } catch (\Throwable) {
+            // Local and other non-signing drivers fall back to no URL.
+            return null;
+        }
+    }
+
     private function extension(UploadedFile $file): ?string
     {
         if (strtolower($file->getClientOriginalExtension()) === 'glb' && file_get_contents($file->getRealPath(), false, null, 0, 4) === 'glTF') {

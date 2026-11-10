@@ -62,9 +62,6 @@ class ImageLinks
         if ($ids === []) {
             return collect();
         }
-        if (! request()->attributes->has('catalog.host')) {
-            return File::whereIn('id', $ids)->get()->keyBy('id');
-        }
         $missing = array_values(array_diff($ids, array_keys($this->resolvedFiles)));
         if ($missing !== []) {
             $files = File::whereIn('id', $missing)->get()->keyBy('id');
@@ -74,6 +71,16 @@ class ImageLinks
         }
 
         return collect($this->resolvedFiles)->only($ids)->filter();
+    }
+
+    public function forget(int $id): void
+    {
+        unset($this->resolvedFiles[$id]);
+    }
+
+    public function flush(): void
+    {
+        $this->resolvedFiles = [];
     }
 
     /** @return list<array<string, mixed>> */

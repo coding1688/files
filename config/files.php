@@ -71,6 +71,22 @@ return [
     */
     'reference_models' => [],
 
+    /*
+    | Disk that serves public URLs when a verified replica exists on it.
+    | Leave null to always serve from the file's own disk.
+    */
+    'preferred_disk' => null,
+
+    /*
+    | Class of the enum cast for files.type. Null uses the package enum.
+    */
+    'type_enum' => null,
+
+    /*
+    | Selectable type values. Null exposes every case of the type enum.
+    */
+    'types' => null,
+
     'uploads' => [
         'default_disk' => 'public',
         'enabled_disks' => ['public', 'local'],

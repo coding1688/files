@@ -4,6 +4,7 @@ namespace Coding1688\Files\Models;
 
 use Coding1688\Files\Constants\FileType;
 use Coding1688\Files\FileStorage;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +20,10 @@ class File extends Model
 
     protected function casts(): array
     {
-        return ['type' => FileType::class, 'size' => 'integer', 'width' => 'integer', 'height' => 'integer', 'metadata' => 'array'];
+        $typeEnum = (string) config('files.type_enum', '');
+        $typeEnum = $typeEnum !== '' && enum_exists($typeEnum) ? $typeEnum : FileType::class;
+
+        return ['type' => $typeEnum, 'size' => 'integer', 'width' => 'integer', 'height' => 'integer', 'metadata' => 'array'];
     }
 
     protected static function booted(): void
@@ -43,6 +47,37 @@ class File extends Model
 
     public function publicUrl(): ?string
     {
-        return app(FileStorage::class)->url($this->disk, $this->path, $this->visibility);
+        [$disk, $path] = $this->resolvedLocation();
+
+        return app(FileStorage::class)->url($disk, $path, $this->visibility);
+    }
+
+    public function temporaryUrl(int|DateTimeInterface|\DateInterval $expires): ?string
+    {
+        [$disk, $path] = $this->resolvedLocation();
+
+        return app(FileStorage::class)->temporaryUrl($disk, $path, $expires);
+    }
+
+    public function replicaOn(string $disk): ?FileReplica
+    {
+        return $this->relationLoaded('replicas')
+            ? $this->replicas->firstWhere('disk', $disk)
+            : $this->replicas()->where('disk', $disk)->first();
+    }
+
+    /** @return array{0: string, 1: string} */
+    private function resolvedLocation(): array
+    {
+        $preferred = config('files.preferred_disk');
+
+        if (is_string($preferred) && $preferred !== '' && $preferred !== $this->disk) {
+            $replica = $this->replicaOn($preferred);
+            if ($replica !== null) {
+                return [$preferred, $replica->path];
+            }
+        }
+
+        return [$this->disk, $this->path];
     }
 }

@@ -16,15 +16,32 @@ class StorageRegistry
     /** @var array<string, FileStorageAccount|null> */
     private array $accounts = [];
 
+    /** @var array<string, bool> */
+    private array $tables = [];
+
     public function forgetDisk(string $disk): void
     {
         unset($this->accounts[$disk]);
     }
 
+    /**
+     * Drop cached storage accounts. Call this after bulk writes that bypass
+     * model events (query builder updates).
+     */
+    public function flush(): void
+    {
+        $this->accounts = [];
+    }
+
+    private function hasTable(string $table): bool
+    {
+        return $this->tables[$table] ??= Schema::hasTable($table);
+    }
+
     /** @return array<string, mixed> */
     public function uploadSettings(): array
     {
-        if (! Schema::hasTable('file_configurations')) {
+        if (! $this->hasTable('file_configurations')) {
             return [];
         }
 
@@ -40,7 +57,7 @@ class StorageRegistry
             $moduleConfig = require __DIR__.'/../config/files.php';
             $defaults = (array) ($moduleConfig['uploads'] ?? []);
         }
-        $accounts = Schema::hasTable('file_storages') ? $this->accountModel()::all()->keyBy('disk') : collect();
+        $accounts = $this->hasTable('file_storages') ? $this->accountModel()::all()->keyBy('disk') : collect();
         $providers = [];
         foreach (array_unique([...array_keys($defaults['providers']), ...$accounts->keys()->all()]) as $disk) {
             $account = $accounts->get($disk);
@@ -65,7 +82,7 @@ class StorageRegistry
     public function disk(string $disk): FilesystemAdapter
     {
         if (! array_key_exists($disk, $this->accounts)) {
-            $this->accounts[$disk] = Schema::hasTable('file_storages') ? $this->accountModel()::where('disk', $disk)->first() : null;
+            $this->accounts[$disk] = $this->hasTable('file_storages') ? $this->accountModel()::where('disk', $disk)->first() : null;
         }
         $account = $this->accounts[$disk];
         if (! $account || (in_array($disk, ['public', 'local'], true) && empty($account->configuration['url']))) {
