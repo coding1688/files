@@ -363,6 +363,12 @@ php artisan files:failover                    # 查看当前顺序
 | `files.sync.connection` / `files.sync.queue` | `file-sync` | 复制任务队列 |
 | `files.reference_models` | `[]` | 宿主登记的文件引用消费者（宿主命令使用） |
 
+## pl-* 系列
+
+- pl-files（本包）：上传、引用追踪、多磁盘存储、多云复制
+- [pl-fields](https://github.com/coding1688/pl-fields)：字段类型注册与选项来源
+- [pl-helpers](https://github.com/coding1688/pl-helpers)：JSON 响应与分页信封
+
 ## 本地化
 
 包内自带 **5 种语言**：`en`、`zh_CN`、`zh_TW`、`ja`、`ko`，语言文件在 `lang/{locale}/file.php`，命名空间为 `files`：
