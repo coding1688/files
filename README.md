@@ -67,15 +67,14 @@ return [
 { "type": "vcs", "url": "git@github.com:coding1688/pl-files.git" }
 ```
 
-本地开发（单仓 path，改代码立即生效）：
+本地开发建议保留 VCS 仓库（生产 `composer install` 用 lock 里的 GitHub dist），安装后把 `vendor/coding1688/pl-files` 软链到源码目录：
 
-```json
-{
-    "repositories": [
-        { "type": "path", "url": "packages/coding1688/pl-files", "options": { "symlink": true } }
-    ]
-}
+```bash
+rm -rf vendor/coding1688/pl-files
+ln -s /path/to/packages/coding1688/files vendor/coding1688/pl-files
 ```
+
+> 不要把 path 仓库写进 `composer.json` 后再执行 `composer update`：lock 会把 dist 固定成 `path`，生产 `composer install` 就会依赖源码目录。
 
 > `0.x` 版本的 caret 会锁次版本：包发 `0.5.0` 时，宿主约束要同步改成 `^0.5`。到 `1.0` 之后 `^1.0` 才能自动接受 `1.x`。
 
