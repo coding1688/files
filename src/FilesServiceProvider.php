@@ -53,9 +53,11 @@ class FilesServiceProvider extends ServiceProvider
     private function mergeFilesConfig(): void
     {
         $defaults = require __DIR__.'/../config/files.php';
-        $current = (array) config('files', []);
+        $merged = $this->merge($defaults, (array) config('files', []));
+        // Unified host file: config/pl.php -> 'files' => [...]
+        $merged = $this->merge($merged, (array) config('pl.files', []));
 
-        config(['files' => $this->merge($defaults, $current)]);
+        config(['files' => $merged]);
     }
 
     /** @param array<string, mixed> $defaults @param array<string, mixed> $current */

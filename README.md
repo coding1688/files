@@ -26,6 +26,22 @@ Laravel 文件模块：上传、文件引用追踪、多磁盘存储、副本复
 - [排错](#排错)
 - [版本与升级](#版本与升级)
 
+## 配置
+
+宿主可以用两种方式覆盖默认值（后者优先）：
+
+- `config/files.php`（`php artisan vendor:publish --tag=files-config`）
+- `config/pl.php` 的 `files` 键（与 `pl-devtools`、`pl-fields` 统一）
+
+```php
+// config/pl.php
+return [
+    'files' => [
+        'uploads' => ['default_disk' => 'cos'],
+    ],
+];
+```
+
 ## 安装
 
 ### 1. 引入仓库
