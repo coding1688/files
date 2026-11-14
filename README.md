@@ -1,5 +1,7 @@
 # pl-files
 
+[English](README.md) | [简体中文](README.zh_CN.md) | [繁體中文](README.zh_TW.md) | [日本語](README.ja.md) | [한국어](README.ko.md)
+
 File uploads, reference tracking, configurable storage accounts and verified replication for Laravel.
 
 [Moonsea](https://moonsea.dev) · [Source](https://github.com/coding1688/pl-files) · [Issues](https://github.com/coding1688/pl-files/issues) · [Getting started](GETTING_STARTED.md)
