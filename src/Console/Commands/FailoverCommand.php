@@ -2,8 +2,7 @@
 
 namespace Coding1688\Files\Console\Commands;
 
-use Coding1688\Files\Models\FileConfiguration;
-use Coding1688\Files\Models\FileReplica;
+use Coding1688\Files\ModelResolver;
 use Coding1688\Files\StorageRegistry;
 use Illuminate\Console\Command;
 
@@ -22,7 +21,7 @@ class FailoverCommand extends Command
             $this->table(
                 ['disk', 'provider', 'enabled', 'replicas'],
                 collect($providers)->map(fn (array $provider, string $disk): array => [
-                    $disk, $provider['provider'], $provider['enabled'] ? 'yes' : 'no', (int) FileReplica::where('disk', $disk)->count(),
+                    $disk, $provider['provider'], $provider['enabled'] ? 'yes' : 'no', (int) (ModelResolver::resolve('replica'))::where('disk', $disk)->count(),
                 ])->values()->all(),
             );
             $this->line('preferred order: '.(($current = $registry->preferredDisks()) === [] ? '(none)' : implode(' -> ', $current)));
@@ -36,16 +35,16 @@ class FailoverCommand extends Command
 
                 return self::FAILURE;
             }
-            if (FileReplica::where('disk', $disk)->doesntExist()) {
+            if ((ModelResolver::resolve('replica'))::where('disk', $disk)->doesntExist()) {
                 $this->warn("No replicas recorded on {$disk} yet; files will fall back to their own disk.");
             }
         }
 
-        $configuration = FileConfiguration::find(1);
+        $configuration = (ModelResolver::resolve('configuration'))::find(1);
 
         if ($configuration === null) {
             $uploads = (array) config('files.uploads', []);
-            $configuration = FileConfiguration::create([
+            $configuration = (ModelResolver::resolve('configuration'))::create([
                 'id' => 1,
                 'default_disk' => $uploads['default_disk'] ?? null,
                 'max_upload_mb' => (int) ($uploads['max_upload_mb'] ?? 32),

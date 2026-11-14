@@ -3,7 +3,7 @@
 namespace Coding1688\Files\Concerns;
 
 use Coding1688\Files\ImageLinks;
-use Coding1688\Files\Models\File;
+use Coding1688\Files\ModelResolver;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Validation\ValidationException;
@@ -48,6 +48,6 @@ trait HasImageCover
 
     public function coverFile(): BelongsTo
     {
-        return $this->belongsTo(File::class, 'cover_file_id');
+        return $this->belongsTo(ModelResolver::resolve('file'), 'cover_file_id');
     }
 }

@@ -52,12 +52,6 @@ return new class extends Migration
             $table->unique(['file_id', 'reference_type', 'reference_id', 'field'], 'file_reference_unique');
         });
 
-        foreach ((array) config('files.owner_tables', []) as $owner) {
-            if (is_string($owner) && $owner !== '' && Schema::hasTable($owner)) {
-                Schema::table($owner, fn (Blueprint $table) => $table->foreign('cover_file_id')->references('id')->on($files)->restrictOnDelete());
-            }
-        }
-
         Schema::create($configuration, function (Blueprint $table): void {
             $table->id();
             $table->string('default_disk', 32)->nullable();
@@ -122,7 +116,10 @@ return new class extends Migration
         Schema::dropIfExists((string) config('files.tables.configuration', 'file_configurations'));
         foreach ((array) config('files.owner_tables', []) as $owner) {
             if (is_string($owner) && $owner !== '' && Schema::hasTable($owner)) {
-                Schema::table($owner, fn (Blueprint $table) => $table->dropForeign(['cover_file_id']));
+                $name = $owner.'_cover_file_id_foreign';
+                if (collect(Schema::getForeignKeys($owner))->contains(fn (array $key): bool => $key['name'] === $name)) {
+                    Schema::table($owner, fn (Blueprint $table) => $table->dropForeign($name));
+                }
             }
         }
         Schema::dropIfExists((string) config('files.tables.references', 'file_references'));

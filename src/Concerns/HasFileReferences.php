@@ -3,7 +3,7 @@
 namespace Coding1688\Files\Concerns;
 
 use Coding1688\Files\FileReferences;
-use Coding1688\Files\Models\FileReference;
+use Coding1688\Files\ModelResolver;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 trait HasFileReferences
@@ -36,6 +36,6 @@ trait HasFileReferences
 
     public function fileReferences(): MorphMany
     {
-        return $this->morphMany(FileReference::class, 'reference');
+        return $this->morphMany(ModelResolver::resolve('reference'), 'reference');
     }
 }

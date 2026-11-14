@@ -4,11 +4,9 @@ namespace Coding1688\Files;
 
 use Aws\CommandInterface;
 use Aws\Middleware;
-use Coding1688\Files\Models\FileConfiguration;
 use Coding1688\Files\Models\FileStorageAccount;
 use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Filesystem\FilesystemAdapter;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class StorageRegistry
@@ -63,19 +61,22 @@ class StorageRegistry
         $this->preferred = null;
     }
 
-    private function hasTable(string $table): bool
+    private function hasTable(string $key): bool
     {
-        return $this->tables[$table] ??= Schema::hasTable($table);
+        $model = new (ModelResolver::resolve($key));
+        $cacheKey = $model->getConnection()->getName().':'.$model->getTable();
+
+        return $this->tables[$cacheKey] ??= $model->getConnection()->getSchemaBuilder()->hasTable($model->getTable());
     }
 
     /** @return array<string, mixed> */
     public function uploadSettings(): array
     {
-        if (! $this->hasTable('file_configurations')) {
+        if (! $this->hasTable('configuration')) {
             return [];
         }
 
-        return FileConfiguration::find(1)?->only(['default_disk', 'max_upload_mb', 'allowed_extensions', 'preferred_disks']) ?? [];
+        return (ModelResolver::resolve('configuration'))::find(1)?->only(['default_disk', 'max_upload_mb', 'allowed_extensions', 'preferred_disks']) ?? [];
     }
 
     /** @return array<string, array<string, mixed>> */
@@ -87,7 +88,7 @@ class StorageRegistry
             $moduleConfig = require __DIR__.'/../config/files.php';
             $defaults = (array) ($moduleConfig['uploads'] ?? []);
         }
-        $accounts = $this->hasTable('file_storages') ? $this->accountModel()::all()->keyBy('disk') : collect();
+        $accounts = $this->hasTable('storage_account') ? $this->accountModel()::all()->keyBy('disk') : collect();
         $providers = [];
         foreach (array_unique([...array_keys($defaults['providers']), ...$accounts->keys()->all()]) as $disk) {
             $account = $accounts->get($disk);
@@ -113,7 +114,7 @@ class StorageRegistry
     public function disk(string $disk): FilesystemAdapter
     {
         if (! array_key_exists($disk, $this->accounts)) {
-            $this->accounts[$disk] = $this->hasTable('file_storages') ? $this->accountModel()::where('disk', $disk)->first() : null;
+            $this->accounts[$disk] = $this->hasTable('storage_account') ? $this->accountModel()::where('disk', $disk)->first() : null;
         }
         $account = $this->accounts[$disk];
         if (! $account || (in_array($disk, ['public', 'local'], true) && empty($account->configuration['url']))) {
@@ -136,9 +137,7 @@ class StorageRegistry
 
     private function accountModel(): string
     {
-        $class = (string) config('files.models.storage_account', '');
-
-        return $class !== '' && class_exists($class) ? $class : FileStorageAccount::class;
+        return ModelResolver::resolve('storage_account');
     }
 
     /** @return array<string, mixed> */

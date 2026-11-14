@@ -10,11 +10,11 @@ final class FileStorage
 {
     public function __construct(private readonly StorageRegistry $storages) {}
 
-    public function store(UploadedFile $file, string $disk, string $directory): StoredFile
+    public function store(UploadedFile $file, string $disk, string $directory, ?string $visibility = null): StoredFile
     {
         $extension = $this->extension($file);
         $filename = (string) Str::ulid().($extension ? '.'.$extension : '');
-        $path = $this->storages->disk($disk)->putFileAs(trim($directory, '/'), $file, $filename);
+        $path = $this->storages->disk($disk)->putFileAs(trim($directory, '/'), $file, $filename, $visibility === null ? [] : ['visibility' => $visibility]);
         if (! is_string($path)) {
             throw new RuntimeException('Unable to store uploaded file.');
         }

@@ -49,7 +49,7 @@ class ImageLinks
         if ($ids === []) {
             return;
         }
-        $files = File::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
+        $files = (ModelResolver::resolve('file'))::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
         if ($files->count() !== count(array_unique($ids)) || $files->contains(fn (File $file): bool => $file->visibility !== 'public' || ! str_starts_with($file->mime_type, 'image/'))) {
             throw ValidationException::withMessages([$field => __('validation.exists', ['attribute' => $field])]);
         }
@@ -64,7 +64,7 @@ class ImageLinks
         }
         $missing = array_values(array_diff($ids, array_keys($this->resolvedFiles)));
         if ($missing !== []) {
-            $files = File::whereIn('id', $missing)->get()->keyBy('id');
+            $files = (ModelResolver::resolve('file'))::whereIn('id', $missing)->get()->keyBy('id');
             foreach ($missing as $id) {
                 $this->resolvedFiles[$id] = $files->get($id);
             }

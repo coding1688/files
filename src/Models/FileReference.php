@@ -2,6 +2,7 @@
 
 namespace Coding1688\Files\Models;
 
+use Coding1688\Files\ModelResolver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -17,7 +18,7 @@ class FileReference extends Model
 
     public function file(): BelongsTo
     {
-        return $this->belongsTo(File::class, 'file_id');
+        return $this->belongsTo(ModelResolver::resolve('file'), 'file_id');
     }
 
     public function reference(): MorphTo

@@ -8,6 +8,14 @@ use Coding1688\Files\Models\FileStorageAccount;
 use Coding1688\Files\Models\FileSyncTask;
 
 return [
+    'management' => [
+        'enabled' => false,
+        'prefix' => 'files-management',
+        'middleware' => ['web', 'auth'],
+        'guard' => null,
+        'gate' => 'manage-files',
+        'locales' => ['en', 'zh_CN', 'zh_TW', 'ja', 'ko'],
+    ],
     /*
     | Model classes are resolved from configuration so host applications can
     | extend or replace them without forking the package.
@@ -48,8 +56,8 @@ return [
     'user_table' => null,
 
     /*
-    | Host tables that own a cover_file_id column. The package migration adds
-    | the foreign key only for tables that exist.
+    | Legacy integration only. New integrations must own these foreign keys
+    | in host migrations. Used only to remove legacy foreign keys on rollback.
     */
     'owner_tables' => [],
 
@@ -58,17 +66,8 @@ return [
     | application's queue configuration.
     */
     'sync' => [
-        'connection' => env('FILES_SYNC_CONNECTION', 'file-sync'),
+        'connection' => env('FILES_SYNC_CONNECTION'),
         'queue' => env('FILES_SYNC_QUEUE', 'file-sync'),
-    ],
-
-    /*
-    | File types. The package only relies on the string value; hosts can add
-    | their own entries and translate labels where they render them.
-    */
-    'types' => [
-        'general', 'system', 'product', 'product_cover', 'content_article',
-        'content_cover', 'brand_logo', 'store', 'user_avatar', 'carousel',
     ],
 
     /*

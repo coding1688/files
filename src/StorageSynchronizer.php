@@ -4,10 +4,8 @@ namespace Coding1688\Files;
 
 use Coding1688\Files\Jobs\FileSyncBatch;
 use Coding1688\Files\Models\File;
-use Coding1688\Files\Models\FileReplica;
-use Coding1688\Files\Models\FileSyncTask;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 use Throwable;
 
@@ -17,24 +15,27 @@ class StorageSynchronizer
 
     public function files(string $disk): Builder
     {
-        return File::where(fn (Builder $query) => $query->where('disk', $disk)->orWhereHas('replicas', fn (Builder $replicas) => $replicas->where('disk', $disk)));
+        return (ModelResolver::resolve('file'))::where(fn (Builder $query) => $query->where('disk', $disk)->orWhereHas('replicas', fn (Builder $replicas) => $replicas->where('disk', $disk)));
     }
 
     public function process(int $id, bool $dispatch = true): bool
     {
-        return DB::transaction(function () use ($id, $dispatch): bool {
-            $task = FileSyncTask::lockForUpdate()->findOrFail($id);
+        $connection = ModelResolver::connection(['sync_task', 'file', 'replica']);
+        $lock = Cache::lock('pl-files:sync:'.$id, 600);
+        $completed = $lock->block(10, function () use ($id, $connection): bool {
+            $task = (ModelResolver::resolve('sync_task'))::findOrFail($id);
             if (! in_array($task->status, ['pending', 'running'], true)) {
                 return true;
             }
-            $task->fill(['status' => 'running', 'started_at' => $task->started_at ?? now()]);
-            $file = $this->files($task->source_disk)->where('id', '>', $task->last_file_id)->where('id', '<=', $task->max_file_id)->orderBy('id')->lockForUpdate()->first();
+            $task->fill(['status' => 'running', 'started_at' => $task->started_at ?? now()])->save();
+            $file = $this->files($task->source_disk)->where('id', '>', $task->last_file_id)->where('id', '<=', $task->max_file_id)->orderBy('id')->first();
             if (! $file) {
                 $task->skipped += max(0, $task->total - $task->copied - $task->skipped - $task->failed);
                 $task->fill(['status' => $task->failed > 0 ? 'failed' : 'completed', 'finished_at' => now()])->save();
 
                 return true;
             }
+            $error = null;
             try {
                 $providers = $this->storages->providers();
                 if (! ($providers[$task->source_disk]['enabled'] ?? false) || ! ($providers[$task->target_disk]['enabled'] ?? false)) {
@@ -44,27 +45,34 @@ class StorageSynchronizer
                     throw new RuntimeException('visibility_mismatch');
                 }
                 $result = $this->copy($file, $task->source_disk, $task->target_disk);
-                $task->{$result}++;
             } catch (Throwable $exception) {
-                $task->failed++;
-                $errors = $task->errors ?? [];
-                if (count($errors) < 32) {
-                    $safeCodes = ['storage_disabled', 'visibility_mismatch', 'destination_conflict', 'source_checksum_mismatch', 'destination_checksum_mismatch'];
-                    $errors[] = ['file_id' => $file->id, 'message' => in_array($exception->getMessage(), $safeCodes, true) ? $exception->getMessage() : 'file_copy_failed'];
+                $result = 'failed';
+                $safeCodes = ['storage_disabled', 'visibility_mismatch', 'destination_conflict', 'source_checksum_mismatch', 'destination_checksum_mismatch'];
+                $error = ['file_id' => $file->id, 'message' => in_array($exception->getMessage(), $safeCodes, true) ? $exception->getMessage() : 'file_copy_failed'];
+            }
+            $connection->transaction(function () use ($id, $file, $result, $error): void {
+                $task = (ModelResolver::resolve('sync_task'))::lockForUpdate()->findOrFail($id);
+                if ($task->last_file_id >= $file->id || ! in_array($task->status, ['pending', 'running'], true)) {
+                    return;
                 }
-                $task->errors = $errors;
-            }
-            $task->last_file_id = $file->id;
-            $task->save();
-            if ($dispatch) {
-                FileSyncBatch::dispatch($id)
-                    ->onConnection((string) config('files.sync.connection', 'file-sync'))
-                    ->onQueue((string) config('files.sync.queue', 'file-sync'))
-                    ->afterCommit();
-            }
+                $task->{$result}++;
+                $errors = $task->errors ?? [];
+                if ($error !== null && count($errors) < 32) {
+                    $errors[] = $error;
+                }
+                $task->fill(['errors' => $errors, 'last_file_id' => $file->id])->save();
+            });
 
             return false;
         });
+        if (! $completed && $dispatch) {
+            FileSyncBatch::dispatch($id)
+                ->onConnection(config('files.sync.connection') ?: config('queue.default'))
+                ->onQueue((string) config('files.sync.queue', 'file-sync'))
+                ->afterCommit();
+        }
+
+        return $completed;
     }
 
     private function copy(File $file, string $sourceDisk, string $targetDisk): string
@@ -118,7 +126,7 @@ class StorageSynchronizer
     private function recordReplica(File $file, string $disk, string $path): void
     {
         if ($file->disk !== $disk) {
-            FileReplica::updateOrCreate(['file_id' => $file->id, 'disk' => $disk], ['path' => $path, 'checksum' => $file->checksum]);
+            (ModelResolver::resolve('replica'))::updateOrCreate(['file_id' => $file->id, 'disk' => $disk], ['path' => $path, 'checksum' => $file->checksum]);
         }
     }
 

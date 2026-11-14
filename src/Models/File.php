@@ -4,6 +4,7 @@ namespace Coding1688\Files\Models;
 
 use Coding1688\Files\Constants\FileType;
 use Coding1688\Files\FileStorage;
+use Coding1688\Files\ModelResolver;
 use Coding1688\Files\StorageRegistry;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
@@ -38,12 +39,12 @@ class File extends Model
 
     public function references(): HasMany
     {
-        return $this->hasMany(FileReference::class, 'file_id');
+        return $this->hasMany(ModelResolver::resolve('reference'), 'file_id');
     }
 
     public function replicas(): HasMany
     {
-        return $this->hasMany(FileReplica::class, 'file_id');
+        return $this->hasMany(ModelResolver::resolve('replica'), 'file_id');
     }
 
     public function publicUrl(): ?string

@@ -2,8 +2,7 @@
 
 namespace Coding1688\Files\Console\Commands;
 
-use Coding1688\Files\Models\File;
-use Coding1688\Files\Models\FileReplica;
+use Coding1688\Files\ModelResolver;
 use Coding1688\Files\StorageRegistry;
 use Illuminate\Console\Command;
 
@@ -23,8 +22,8 @@ class DisksCommand extends Command
                 $provider['configured'] ? 'yes' : 'no',
                 $provider['enabled'] ? 'yes' : 'no',
                 implode('|', $provider['visibilities']),
-                (int) File::where('disk', $disk)->count(),
-                (int) FileReplica::where('disk', $disk)->count(),
+                (int) (ModelResolver::resolve('file'))::where('disk', $disk)->count(),
+                (int) (ModelResolver::resolve('replica'))::where('disk', $disk)->count(),
             ];
         }
 

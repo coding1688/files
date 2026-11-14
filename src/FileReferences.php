@@ -3,16 +3,14 @@
 namespace Coding1688\Files;
 
 use Coding1688\Files\Models\File;
-use Coding1688\Files\Models\FileReference;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class FileReferences
 {
     public function syncModel(Model $owner): void
     {
-        DB::transaction(function () use ($owner): void {
+        ModelResolver::connection(['file', 'reference'], $owner)->transaction(function () use ($owner): void {
             $current = $owner->newQuery()->lockForUpdate()->find($owner->getKey());
             if (! $current) {
                 return;
@@ -23,12 +21,13 @@ class FileReferences
 
     public function validate(Model $owner): void
     {
+        ModelResolver::connection(['file', 'reference'], $owner);
         $fields = $this->fieldsFor($owner);
         $requested = collect($fields)->flatten()->map(fn ($id): int => (int) $id)->unique();
         if ($requested->isEmpty()) {
             return;
         }
-        $found = File::whereIn('id', $requested->all())->pluck('id')->map(fn ($id): int => (int) $id);
+        $found = (ModelResolver::resolve('file'))::whereIn('id', $requested->all())->pluck('id')->map(fn ($id): int => (int) $id);
         $missing = $requested->diff($found);
         if ($missing->isEmpty()) {
             return;
@@ -54,12 +53,12 @@ class FileReferences
     /** @param array<string, list<int>> $fields */
     public function sync(Model $owner, array $fields): void
     {
-        DB::transaction(function () use ($owner, $fields): void {
+        ModelResolver::connection(['file', 'reference'], $owner)->transaction(function () use ($owner, $fields): void {
             $owner->newQuery()->lockForUpdate()->findOrFail($owner->getKey());
-            $query = FileReference::where('reference_type', $owner->getMorphClass())->where('reference_id', $owner->getKey());
+            $query = (ModelResolver::resolve('reference'))::where('reference_type', $owner->getMorphClass())->where('reference_id', $owner->getKey());
             $requested = collect($fields)->flatten()->map(fn ($id): int => (int) $id)->unique()->sort()->values();
             $existing = (clone $query)->pluck('file_id');
-            $locked = File::whereIn('id', $requested->merge($existing)->unique()->sort()->values())->orderBy('id')->lockForUpdate()->pluck('id');
+            $locked = (ModelResolver::resolve('file'))::whereIn('id', $requested->merge($existing)->unique()->sort()->values())->orderBy('id')->lockForUpdate()->pluck('id');
             if ($requested->diff($locked)->isNotEmpty()) {
                 throw ValidationException::withMessages(['files' => __('files::file.missing')]);
             }
@@ -67,7 +66,7 @@ class FileReferences
             $query->delete();
             foreach ($fields as $field => $ids) {
                 foreach (array_unique($ids) as $id) {
-                    FileReference::create([
+                    (ModelResolver::resolve('reference'))::create([
                         'file_id' => $id,
                         'reference_type' => $owner->getMorphClass(),
                         'reference_id' => $owner->getKey(),
@@ -105,7 +104,7 @@ class FileReferences
             return [];
         }
 
-        return File::whereIn('path', array_unique($paths))->get()->filter(function (File $file) use ($urls): bool {
+        return (ModelResolver::resolve('file'))::whereIn('path', array_unique($paths))->get()->filter(function (File $file) use ($urls): bool {
             $canonical = $file->publicUrl();
             if ($canonical === null) {
                 return false;

@@ -2,7 +2,8 @@
 
 namespace Coding1688\Files\Console\Commands;
 
-use Coding1688\Files\Models\FileSyncTask;
+use Coding1688\Files\Jobs\FileSyncBatch;
+use Coding1688\Files\ModelResolver;
 use Coding1688\Files\StorageRegistry;
 use Coding1688\Files\StorageSynchronizer;
 use Illuminate\Console\Command;
@@ -38,6 +39,13 @@ class SyncCommand extends Command
             return self::FAILURE;
         }
 
+        $connection = config('files.sync.connection') ?: config('queue.default');
+        if (! $this->option('now') && ! config('queue.connections.'.$connection)) {
+            $this->error('The configured queue connection does not exist.');
+
+            return self::FAILURE;
+        }
+
         $files = $synchronizer->files($source);
         $maxId = (int) $files->max('id');
         if ($maxId === 0) {
@@ -46,7 +54,7 @@ class SyncCommand extends Command
             return self::SUCCESS;
         }
 
-        $task = FileSyncTask::create([
+        $task = (ModelResolver::resolve('sync_task'))::create([
             'source_disk' => $source,
             'target_disk' => $target,
             'status' => 'pending',
@@ -57,7 +65,11 @@ class SyncCommand extends Command
 
         $this->info("Task #{$task->id}: {$task->total} file(s) {$source} -> {$target}");
 
-        if (! $this->option('now')) {
+        if (! $this->option('now') && config('queue.connections.'.$connection.'.driver') !== 'sync') {
+            FileSyncBatch::dispatch($task->id)
+                ->onConnection($connection)
+                ->onQueue((string) config('files.sync.queue', 'file-sync'))
+                ->afterCommit();
             $this->info('Queued on the configured sync connection; run the worker or pass --now.');
 
             return self::SUCCESS;

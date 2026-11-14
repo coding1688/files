@@ -28,6 +28,10 @@ class FilesServiceProvider extends ServiceProvider
 
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'files');
 
+        if (config('files.management.enabled', false)) {
+            $this->loadRoutesFrom(__DIR__.'/../routes/management.php');
+        }
+
         if ($this->app->runningInConsole()) {
             $this->commands([DisksCommand::class, SyncCommand::class, FailoverCommand::class, SmokeCommand::class]);
 
@@ -53,9 +57,9 @@ class FilesServiceProvider extends ServiceProvider
     private function mergeFilesConfig(): void
     {
         $defaults = require __DIR__.'/../config/files.php';
-        $merged = $this->merge($defaults, (array) config('files', []));
-        // Unified host file: config/pl.php -> 'files' => [...]
-        $merged = $this->merge($merged, (array) config('pl.files', []));
+        $merged = $this->merge($defaults, (array) config('pl.files', []));
+        // Canonical files.php settings override legacy pl.files settings.
+        $merged = $this->merge($merged, (array) config('files', []));
 
         config(['files' => $merged]);
     }
